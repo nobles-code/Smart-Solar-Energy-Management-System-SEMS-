@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --on-color: #34c759;
+            --off-color: #ff3b30;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        #logs-section {
+            padding: 20px;
+            max-width: 1400px; /* Increased max-width */
+            margin: 0 auto;
+        }
+
+        h2 {
+            font-size: 26px; /* Increased font size */
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        #logs-wrapper {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px; /* Increased gap */
+        }
+
+        @media (min-width: 768px) {
+            #logs-wrapper {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 25px; /* Increased padding */
+            overflow: hidden;
+            height: 600px; /* Set fixed height */
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px; /* Increased margin */
+        }
+
+        .section-header i {
+            margin-right: 12px;
+            color: var(--primary-color);
+            font-size: 22px; /* Increased icon size */
+        }
+
+        .section-title {
+            font-size: 20px; /* Increased font size */
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Log container styles */
+        .log-container {
+            max-height: 520px; /* Adjusted for fixed height card */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: center;
+            padding: 14px;
+            border-radius: 8px;
+            background-color: rgba(245, 247, 250, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        .log-entry:hover {
+            transform: translateX(5px);
+            background-color: rgba(245, 247, 250, 0.8);
+        }
+
+        .log-icon {
+            width: 40px; /* Increased size */
+            height: 40px; /* Increased size */
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .log-icon i {
+            color: white;
+            font-size: 18px; /* Increased size */
+        }
+
+        .log-on .log-icon {
+            background-color: var(--on-color);
+        }
+
+        .log-off .log-icon {
+            background-color: var(--off-color);
+        }
+
+        .log-content {
+            flex-grow: 1;
+        }
+
+        .log-device {
+            font-weight: 600;
+            font-size: 16px; /* Increased size */
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+        }
+
+        .log-status {
+            font-size: 13px;
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            margin-left: 10px;
+            color: white;
+        }
+
+        .status-on {
+            background-color: var(--on-color);
+        }
+
+        .status-off {
+            background-color: var(--off-color);
+        }
+
+        .log-time {
+            font-size: 14px; /* Increased size */
+            color: var(--text-secondary);
+        }
+
+        /* Usage container styles - REVISED */
+        .usage-container {
+            max-height: 520px; /* Adjusted for fixed height card */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .usage-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 0 10px;
+        }
+
+        .usage-entry {
+            background-color: rgba(245, 247, 250, 0.5);
+            border-radius: 10px;
+            padding: 16px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .usage-entry:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .usage-rank {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ff9500);
+        }
+
+        .rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+        }
+
+        .rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #a05a2c);
+        }
+
+        .rank-other {
+            background: linear-gradient(135deg, #4285f4, #285fad);
+        }
+
+        .usage-content {
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .device-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .device-icon i {
+            color: white;
+            font-size: 20px;
+        }
+
+        .device-details {
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .device-name {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .energy-used {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 18px;
+            background-color: rgba(66, 133, 244, 0.1);
+            padding: 5px 12px;
+            border-radius: 8px;
+            margin-left: 20px;
+        }
+
+        .usage-bar-container {
+            height: 10px;
+            background-color: rgba(66, 133, 244, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .usage-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 5px;
+            transition: width 1s ease-in-out;
+        }
+
+        .usage-percentage {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .section-card {
+                height: auto;
+                min-height: 400px;
+            }
+            
+            .log-container, .usage-container {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .log-entry {
+                padding: 12px;
+            }
+            
+            .log-icon {
+                width: 36px;
+                height: 36px;
+            }
+            
+            .device-icon {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .device-name {
+                font-size: 16px;
+            }
+            
+            .energy-used {
+                font-size: 14px;
+                padding: 4px 8px;
+                margin-left: 10px;
+            }
+        }
+    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <section id="logs-section">
+        <h2>Smart Home Activity</h2>
+        <div id="logs-wrapper">
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-history"></i>
+                    <h3 class="section-title">Device Activity Log</h3>
+                </div>
+                <div id="log-container" class="log-container">
+                    <!-- Logs will be displayed here -->
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-bolt"></i>
+                    <h3 class="section-title">Energy Consumption</h3>
+                </div>
+                <div class="usage-header">
+                    <span>Device</span>
+                    <span>Energy Used</span>
+                </div>
+                <div id="usage-container" class="usage-container">
+                    <!-- Usage logs will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Device icons mapping
+        const deviceIcons = {
+            'tv': 'fa-tv',
+            'sound_system': 'fa-volume-high',
+            'kitchen_light': 'fa-lightbulb',
+            'dining_light': 'fa-lightbulb',
+            'bed_light': 'fa-lightbulb',
+            'security_light': 'fa-shield',
+            'default': 'fa-plug'
+        };
+
+        // Format device name for display
+        function formatDeviceName(name) {
+            return name.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        // Handle log updates
+        socket.on('log_update', (data) => {
+            console.log("Received updated logs:", data);
+            const logContainer = document.getElementById('log-container');
+            logContainer.innerHTML = ''; // Clear existing logs
+            
+            data.logs.forEach(log => {
+                const changes = log.changes.split('\n');
+                
+                changes.forEach(change => {
+                    // Parse the change
+                    const match = change.match(/(.+) turned (ON|OFF)/);
+                    if (!match) return;
+                    
+                    const deviceName = match[1];
+                    const status = match[2];
+                    const isOn = status === 'ON';
+                    
+                    // Create log entry
+                    const logEntry = document.createElement('div');
+                    logEntry.className = `log-entry ${isOn ? 'log-on' : 'log-off'}`;
+                    
+                    // Create log icon
+                    const logIcon = document.createElement('div');
+                    logIcon.className = 'log-icon';
+                    
+                    const iconElement = document.createElement('i');
+                    const iconClass = deviceIcons[deviceName] || deviceIcons.default;
+                    iconElement.className = `fas ${iconClass}`;
+                    logIcon.appendChild(iconElement);
+                    
+                    // Create log content
+                    const logContent = document.createElement('div');
+                    logContent.className = 'log-content';
+                    
+                    const logDevice = document.createElement('div');
+                    logDevice.className = 'log-device';
+                    logDevice.textContent = formatDeviceName(deviceName);
+                    
+                    const logStatus = document.createElement('span');
+                    logStatus.className = `log-status ${isOn ? 'status-on' : 'status-off'}`;
+                    logStatus.textContent = status;
+                    logDevice.appendChild(logStatus);
+                    
+                    const logTime = document.createElement('div');
+                    logTime.className = 'log-time';
+                    
+                    // Format the timestamp
+                    const timestamp = new Date(log.timestamp);
+                    const now = new Date();
+                    const isToday = timestamp.toDateString() === now.toDateString();
+                    
+                    logTime.textContent = isToday ? 
+                        `Today at ${timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}` : 
+                        timestamp.toLocaleString();
+                    
+                    logContent.appendChild(logDevice);
+                    logContent.appendChild(logTime);
+                    
+                    logEntry.appendChild(logIcon);
+                    logEntry.appendChild(logContent);
+                    
+                    logContainer.appendChild(logEntry);
+                });
+            });
+        });
+        
+        // Handle usage updates - REVISED
+        function updateUsageContainer() {
+            if (!aggregatedConsumptionData) {
+                console.warn("No aggregated consumption data available yet.");
+                return;
+            }
+            
+            const usageContainer = document.getElementById('usage-container');
+            usageContainer.innerHTML = ''; // Clear previous data
+            
+            // Find the highest energy consumption for scaling
+            const maxConsumption = Math.max(...aggregatedConsumptionData.map(device => device.energy_consumed));
+            
+            // Get the total consumption for percentage calculation
+            const totalConsumption = aggregatedConsumptionData.reduce((sum, device) => sum + device.energy_consumed, 0);
+            
+            aggregatedConsumptionData.forEach((device, index) => {
+                const deviceEntry = document.createElement('div');
+                deviceEntry.className = 'usage-entry';
+                
+                // Add ranking badge
+                const rankBadge = document.createElement('div');
+                let rankClass = 'rank-other';
+                if (index === 0) rankClass = 'rank-1';
+                else if (index === 1) rankClass = 'rank-2';
+                else if (index === 2) rankClass = 'rank-3';
+                
+                rankBadge.className = `usage-rank ${rankClass}`;
+                rankBadge.textContent = index + 1;
+                deviceEntry.appendChild(rankBadge);
+                
+                // Create content container
+                const usageContent = document.createElement('div');
+                usageContent.className = 'usage-content';
+                
+                // Create device icon
+                const deviceIcon = document.createElement('div');
+                deviceIcon.className = 'device-icon';
+                
+                // Set device-specific icon color
+                if (index === 0) deviceIcon.style.backgroundColor = '#ff9500';
+                else if (index === 1) deviceIcon.style.backgroundColor = '#a0a0a0';
+                else if (index === 2) deviceIcon.style.backgroundColor = '#cd7f32';
+                
+                const iconElement = document.createElement('i');
+                const iconClass = deviceIcons[device.device_name] || deviceIcons.default;
+                iconElement.className = `fas ${iconClass}`;
+                deviceIcon.appendChild(iconElement);
+                
+                // Create device details container
+                const deviceDetails = document.createElement('div');
+                deviceDetails.className = 'device-details';
+                
+                // Device name
+                const deviceName = document.createElement('div');
+                deviceName.className = 'device-name';
+                deviceName.textContent = formatDeviceName(device.device_name);
+                
+                // Energy value
+                const energyUsed = document.createElement('div');
+                energyUsed.className = 'energy-used';
+                energyUsed.textContent = `${device.energy_consumed.toFixed(4)} kWh`;
+                
+                // Add all to device details
+                deviceDetails.appendChild(deviceName);
+                deviceDetails.appendChild(energyUsed);
+                
+                // Add icon and details to content
+                usageContent.appendChild(deviceIcon);
+                usageContent.appendChild(deviceDetails);
+                
+                // Create usage bar container
+                const barContainer = document.createElement('div');
+                barContainer.className = 'usage-bar-container';
+                
+                // Create usage bar
+                const bar = document.createElement('div');
+                bar.className = 'usage-bar';
+                
+                // Calculate percentage relative to max consumption
+                const percentage = (device.energy_consumed / maxConsumption) * 100;
+                bar.style.width = `${percentage}%`;
+                
+                // Set bar color based on rank
+                if (index === 0) bar.style.backgroundColor = '#ff9500';
+                else if (index === 1) bar.style.backgroundColor = '#a0a0a0'; 
+                else if (index === 2) bar.style.backgroundColor = '#cd7f32';
+                
+                barContainer.appendChild(bar);
+                
+                // Add percentage text
+                const percentageText = document.createElement('div');
+                percentageText.className = 'usage-percentage';
+                const usagePercentage = (device.energy_consumed / totalConsumption * 100).toFixed(1);
+                percentageText.textContent = `${usagePercentage}% of total consumption`;
+                
+                // Add all elements to the device entry
+                deviceEntry.appendChild(usageContent);
+                deviceEntry.appendChild(barContainer);
+                deviceEntry.appendChild(percentageText);
+                
+                usageContainer.appendChild(deviceEntry);
+            });
+        }
+    
+    
+    
+    </script>
+</body>
+</html>

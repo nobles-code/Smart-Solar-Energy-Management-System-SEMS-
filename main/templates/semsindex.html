@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART SOLAR, SMART LIFE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/semstyles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+
+<body>
+    <!-- Navigation Bar -->
+    <!-- HTML for the enhanced navigation bar and settings panel -->
+    <nav id="navigation" class="navigation-bar">
+        <div id="nav-content" class="nav-content">
+            <div class="nav-left">
+                <span id="system-header">s<u>SEMS</u></span>
+            </div>
+
+            <div class="nav-center">
+                <p class="tagline">Monitor, Control and Optimize your energy usage</p>
+            </div>
+
+            <div class="nav-right">
+                <ul class="nav-tabs">
+                    <li><a href="#trend">Trend</a></li>
+                    <li><a href="#logs-section">Logs</a></li>
+                    <li><a href="#settings" onclick="openSettingsPanel(event)">Settings</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Settings Panel Overlay -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2>System Settings</h2>
+                <button class="close-button" onclick="closeSettingsPanel()">&times;</button>
+            </div>
+
+            <div class="settings-body">
+                <div class="emergency-section">
+                    <h3>Emergency Controls</h3>
+                    <button id="emergency-shutdown" class="emergency-button" onclick="emergencyShutdown()">
+                        EMERGENCY SHUTDOWN
+                    </button>
+                    <p class="warning-text">This will immediately shut down all connected systems!</p>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Power Management</h3>
+                    <div class="setting-item">
+                        <label for="battery-threshold">Battery Reserve Threshold (%)</label>
+                        <input type="range" id="battery-threshold" min="10" max="50" value="20">
+                        <span id="battery-threshold-value">20%</span>
+                    </div>
+                    <div class="setting-item">
+                        <label for="power-priority">Power Priority Mode</label>
+                        <select id="power-priority">
+                            <option value="efficiency">Maximum Efficiency</option>
+                            <option value="battery">Battery Preservation</option>
+                            <option value="grid">Grid Optimization</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Device Control</h3>
+                    <div class="setting-item">
+                        <label>Auto-shutdown Inactive Devices</label>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Schedule-based Power Management</label>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <button class="secondary-button" onclick="openDeviceManager()">Manage Connected Devices</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>System Notifications</h3>
+                    <div class="setting-item">
+                        <label>Critical Alerts</label>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Performance Reports</label>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Maintenance Reminders</label>
+                        <label class="switch">
+                            <input type="checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-footer">
+                <button class="cancel-button" onclick="closeSettingsPanel()">Cancel</button>
+                <button class="save-button" onclick="saveSettings()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="loading-container">
+        <p>Loading...</p>
+        <img src="{{ url_for('static', filename='images/loading.gif') }}" alt="Loading">
+    </div>
+
+    <!-- Data Display Section -->
+    <div id="data-container">
+        <div style="align-text: center; margin-left: 22%;">
+
+            <h1 style="font-family: wide latin;">
+                WELCOME
+            </h1>
+            <h2 style="font-family: elephat;" class="sys-name">SMART SOLAR ENERGY MANAGEMENT SYSTEM</h2>
+
+            <!-- <input type="text" id="device-id" placeholder="Enter your device number" required> -->
+            <h3 style="font-family: forte;"> GETTING YOU IN...</h3>
+        </div>
+
+    </div>
+    <section id="logs-section">
+        <h2>Smart Home Activity</h2>
+        <div id="logs-wrapper">
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-history"></i>
+                    <h3 class="section-title">Device Activity Log</h3>
+                </div>
+                <div id="log-container" class="log-container">
+                    <!-- Logs will be displayed here -->
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="section-header">
+                    <i class="fas fa-bolt"></i>
+                    <h3 class="section-title">Energy Consumption</h3>
+                </div>
+                <div class="usage-header">
+                    <span>Device</span>
+                    <span>Energy Used</span>
+                </div>
+                <div id="usage-container" class="usage-container">
+                    <!-- Usage logs will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="logs-section">
+        <h2 id="trend">Solar & Battery Real-Time Output Trend</h2>
+        <div id="chart-container">
+            <canvas id="solarBatteryChart"></canvas>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script> <!-- Axios for API calls -->
+    <script src="app.js"></script> <!-- Custom JS for graph -->
+
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>System Health Dashboard</h2>
+            <div class="refresh-data">
+                <span id="last-update">Last updated: <span id="update-time">12:30:45 PM</span></span>
+                <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Battery Health Section -->
+            <div class="dashboard-card battery-health">
+                <div class="card-header">
+                    <h3><i class="fas fa-battery-three-quarters"></i> Battery Health</h3>
+                    <span class="health-badge good">Good</span>
+                </div>
+                <div class="card-content">
+                    <div class="battery-level">
+                        <div class="battery-meter">
+                            <div class="battery-level-indicator" style="width: 75%"></div>
+                        </div>
+                        <span class="percentage">75%</span>
+                    </div>
+                    <div class="battery-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Voltage:</span>
+                            <span class="stat-value">24.2V</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Current:</span>
+                            <span class="stat-value">5.4A</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Temperature:</span>
+                            <span class="stat-value">28°C</span>
+                        </div>
+                        <div class="stat-item maintenance-alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Acid top-up recommended within 30 days</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Solar Panel Health Section -->
+            <div class="dashboard-card solar-health">
+                <div class="card-header">
+                    <h3><i class="fas fa-solar-panel"></i> Solar Panel Health</h3>
+                    <span class="health-badge warning">Needs Attention</span>
+                </div>
+                <div class="card-content">
+                    <div class="solar-output">
+                        <div class="output-meter">
+                            <div class="output-level-indicator" style="height: 62%"></div>
+                        </div>
+                        <span class="percentage">62%</span>
+                    </div>
+                    <div class="solar-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Current Output:</span>
+                            <span class="stat-value">680W</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Peak Today:</span>
+                            <span class="stat-value">920W</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Efficiency:</span>
+                            <span class="stat-value decrease">↓ 12% from baseline</span>
+                        </div>
+                        <div class="stat-item maintenance-alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Panel cleaning recommended - 15% below expected output</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Energy Savings Section -->
+            <div class="dashboard-card energy-savings">
+                <div class="card-header">
+                    <h3><i class="fas fa-leaf"></i> Energy Savings</h3>
+                </div>
+                <div class="card-content">
+                    <div class="savings-amount">
+                        <span class="currency">$</span>
+                        <span class="amount">342</span>
+                    </div>
+                    <div class="savings-period">This Month</div>
+                    <div class="savings-trend">
+                        <span class="trend-label">Trend:</span>
+                        <span class="trend-value increase">↑ 12% from last month</span>
+                    </div>
+                    <div class="carbon-offset">
+                        <i class="fas fa-globe-americas"></i>
+                        <span>Carbon Offset: 215kg CO₂</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Devices Health -->
+            <div class="dashboard-card devices-health">
+                <div class="card-header">
+                    <h3><i class="fas fa-plug"></i> Connected Devices</h3>
+                    <span class="device-count">6 Active</span>
+                </div>
+                <div class="card-content">
+                    <div class="devices-list">
+                        <div class="device-item">
+                            <span class="device-name">Water Pump</span>
+                            <span class="device-status normal">Normal</span>
+                            <span class="device-consumption">140W</span>
+                        </div>
+                        <div class="device-item">
+                            <span class="device-name">HVAC System</span>
+                            <span class="device-status high">High Usage</span>
+                            <span class="device-consumption">860W</span>
+                        </div>
+                        <div class="device-item">
+                            <span class="device-name">Kitchen Lights</span>
+                            <span class="device-status normal">Normal</span>
+                            <span class="device-consumption">120W</span>
+                        </div>
+                        <div class="device-item">
+                            <span class="device-name">Living Room</span>
+                            <span class="device-status normal">Normal</span>
+                            <span class="device-consumption">85W</span>
+                        </div>
+                    </div>
+                    <button class="view-all-btn" onclick="viewAllDevices()">View All Devices</button>
+                </div>
+            </div>
+
+            <!-- System Notifications -->
+            <div class="dashboard-card notifications">
+                <div class="card-header">
+                    <h3><i class="fas fa-bell"></i> System Notifications</h3>
+                    <span class="notification-count">3 New</span>
+                </div>
+                <div class="card-content">
+                    <div class="notification-list">
+                        <div class="notification-item urgent">
+                            <div class="notification-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">Battery Acid Level Low</div>
+                                <div class="notification-desc">Battery acid level below recommended threshold. Schedule
+                                    maintenance soon.</div>
+                                <div class="notification-time">2 hours ago</div>
+                            </div>
+                        </div>
+                        <div class="notification-item warning">
+                            <div class="notification-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">Solar Output Decline</div>
+                                <div class="notification-desc">Solar panel output has declined 15% below expected levels
+                                    based on sunlight data.</div>
+                                <div class="notification-time">Yesterday</div>
+                            </div>
+                        </div>
+                        <div class="notification-item info">
+                            <div class="notification-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-title">System Update Available</div>
+                                <div class="notification-desc">A new firmware update is available for your system
+                                    controller.</div>
+                                <div class="notification-time">3 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="view-all-btn" onclick="viewAllNotifications()">View All Notifications</button>
+                </div>
+            </div>
+
+            <!-- Power Generation & Usage -->
+            <div class="dashboard-card power-analysis">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> Power Analysis</h3>
+                </div>
+                <div class="card-content">
+                    <div class="power-chart">
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-color generation"></span>
+                                <span class="legend-label">Generation</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-color consumption"></span>
+                                <span class="legend-label">Consumption</span>
+                            </div>
+                        </div>
+                        <div class="chart-container" id="powerChart">
+                            <!-- This would be replaced with actual chart rendering -->
+                            <div class="placeholder-chart">
+                                <div class="placeholder-bar generation" style="height: 60%"></div>
+                                <div class="placeholder-bar consumption" style="height: 40%"></div>
+                                <div class="placeholder-bar generation" style="height: 75%"></div>
+                                <div class="placeholder-bar consumption" style="height: 50%"></div>
+                                <div class="placeholder-bar generation" style="height: 80%"></div>
+                                <div class="placeholder-bar consumption" style="height: 65%"></div>
+                                <div class="placeholder-bar generation" style="height: 70%"></div>
+                                <div class="placeholder-bar consumption" style="height: 60%"></div>
+                                <div class="placeholder-bar generation" style="height: 65%"></div>
+                                <div class="placeholder-bar consumption" style="height: 55%"></div>
+                            </div>
+                        </div>
+                        <div class="power-stats">
+                            <div class="power-stat">
+                                <span class="stat-label">Avg. Generation:</span>
+                                <span class="stat-value">3.2 kWh/day</span>
+                            </div>
+                            <div class="power-stat">
+                                <span class="stat-label">Avg. Consumption:</span>
+                                <span class="stat-value">2.8 kWh/day</span>
+                            </div>
+                            <div class="power-stat">
+                                <span class="stat-label">Surplus:</span>
+                                <span class="stat-value positive">+0.4 kWh/day</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Debug Panel Button -->
+            <div class="debug-panel-container">
+                <button id="toggle-debug-panel" class="debug-toggle-btn">Show Debug Panel</button>
+
+                <!-- Debug Panel (Hidden by Default) -->
+                <div id="debug-panel" style="display: none;">
+                    <h1>Flask-SocketIO Real-time Communication</h1>
+                    <div id="data-container1">
+                        <h3>Live Data</h3>
+                        <p>Timestamp: <span id="timestamp">-</span></p>
+                        <p>Value: <span id="value">-</span></p>
+                        <p>Status: <span id="status">-</span></p>
+                        <button id="request-data">Request New Data</button>
+                    </div>
+                    <h3>Message Log</h3>
+                    <div id="messages"></div>
+                    <input type="text" id="message-input" placeholder="Type a message...">
+                    <button id="send-button">Send</button>
+                </div>
+            </div>
+
+            <style>
+                .debug-toggle-btn {
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    padding: 10px 15px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    display: none;
+                }
+
+                .debug-toggle-btn:hover {
+                    background-color: #0056b3;
+                }
+
+                #debug-panel {
+                    margin-top: 10px;
+                    padding: 15px;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    background-color: #f9f9f9;
+                }
+            </style>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const toggleButton = document.getElementById('toggle-debug-panel');
+                    const debugPanel = document.getElementById('debug-panel');
+
+                    toggleButton.addEventListener('click', function () {
+                        if (debugPanel.style.display === 'none') {
+                            debugPanel.style.display = 'block';
+                            toggleButton.textContent = 'Hide Debug Panel';
+                        } else {
+                            debugPanel.style.display = 'none';
+                            toggleButton.textContent = 'Show Debug Panel';
+                        }
+                    });
+
+                    // This ensures the existing JavaScript for SocketIO still works
+                    // No need to modify this part as it will work with the elements in the debug panel
+                });
+            </script>
+
+        </div>
+    </div>
+
+    <!-- JavaScript to power the dashboard functionality -->
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-section about">
+                <h3>About Us</h3>
+                <p>We provide smart energy solutions to optimize power consumption and efficiency.</p>
+            </div>
+            <div class="footer-section contact">
+                <h3>Contact Us</h3>
+                <ul>
+                    <li><i class="fas fa-envelope"></i> <a href="mailto:">mucheru543@gmail.com</a></li>
+                    <li><i class="fas fa-phone"></i> (+254) 741-012721</li>
+                    <li><i class="fas fa-map-marker-alt"></i>The Prophetic University, Ndagani, City Of Academia</li>
+                </ul>
+            </div>
+            <div class="footer-section social">
+                <h3>Follow Us</h3>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 Energy Solutions. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Function to open settings panel
+        function openSettingsPanel(event) {
+            event.preventDefault();
+            document.getElementById('settings-panel').style.display = 'flex';
+        }
+
+        // Function to close settings panel
+        function closeSettingsPanel() {
+            document.getElementById('settings-panel').style.display = 'none';
+        }
+
+        // Emergency shutdown function
+        function emergencyShutdown() {
+            if (confirm('WARNING: This will shut down ALL connected systems. Proceed?')) {
+                // Get the emergency button and add loading state
+                const emergencyButton = document.getElementById('emergency-shutdown');
+                const originalButtonText = emergencyButton.innerHTML;
+
+                // Disable button and show spinner
+                emergencyButton.disabled = true;
+                emergencyButton.innerHTML = `
+            <span class="spinner2"></span>
+            <span>Processing Shutdown...</span>
+        `;
+
+                // Create status indicator
+                const statusElement = document.createElement('div');
+                statusElement.className = 'status-indicator';
+                statusElement.innerHTML = '<span class="status-text">Sending shutdown request...</span>';
+
+                // Append status indicator below button
+                emergencyButton.parentNode.insertBefore(statusElement, emergencyButton.nextSibling);
+
+                // Call backend API to shut down systems
+                fetch('/sems_in/api/emergency-shutdown', {  // Updated path to match Flask route
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'shutdown',
+                        timestamp: new Date().toISOString()
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        updateStatus(statusElement, 'Request received, contacting control systems...', 'pending');
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Check if control API acknowledged the request
+                        if (data.status === 'acknowledged') {
+                            updateStatus(statusElement, 'Control systems notified, executing shutdown...', 'pending');
+
+                            // Poll for shutdown status
+                            return pollShutdownStatus(statusElement);
+                        } else {
+                            throw new Error('Control systems did not acknowledge shutdown request');
+                        }
+                    })
+                    .then(finalStatus => {
+                        if (finalStatus.status === 'completed') {
+                            updateStatus(statusElement, 'Emergency shutdown completed successfully!', 'success');
+                            console.log('Shutdown completed:', finalStatus);
+                        } else {
+                            throw new Error('Shutdown process failed: ' + finalStatus.message);
+                        }
+                    })
+                    .catch(error => {
+                        updateStatus(statusElement, 'Error: ' + error.message, 'error');
+                        console.error('Shutdown error:', error);
+                    })
+                    .finally(() => {
+                        // Restore button after 5 seconds
+                        setTimeout(() => {
+                            emergencyButton.disabled = false;
+                            emergencyButton.innerHTML = originalButtonText;
+                            updateStatus(statusElement, "");
+                        }, 5000);
+                    });
+            }
+        }
+
+        // Function to update status indicator
+        function updateStatus(statusElement, message, state) {
+            statusElement.innerHTML = `<span class="status-text status-${state}">${message}</span>`;
+        }
+
+        // Function to poll shutdown status
+        function pollShutdownStatus(statusElement) {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 10;
+
+                const checkStatus = () => {
+                    attempts++;
+
+                    fetch('/sems_in/api/emergency-shutdown/status')  // Updated path to match Flask route
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Status check failed');
+                            }
+                            return response.json();
+                        })
+                        .then(statusData => {
+                            if (statusData.status === 'completed') {
+                                resolve(statusData);
+                            } else if (statusData.status === 'failed') {
+                                reject(new Error(statusData.message || 'Shutdown failed'));
+                            } else if (attempts >= maxAttempts) {
+                                reject(new Error('Timeout: No shutdown confirmation received'));
+                            } else {
+                                // Update progress if available
+                                if (statusData.progress) {
+                                    updateStatus(statusElement,
+                                        `Shutdown in progress: ${statusData.progress}%`,
+                                        'pending');
+                                }
+
+                                // Continue polling
+                                setTimeout(checkStatus, 1000);
+                            }
+                        })
+                        .catch(error => {
+                            reject(error);
+                        });
+                };
+
+                // Start polling
+                checkStatus();
+            });
+        }
+
+
+        // Function to save settings
+        function saveSettings() {
+            // Collect all settings
+            const settings = {
+                batteryThreshold: document.getElementById('battery-threshold').value,
+                powerPriorityMode: document.getElementById('power-priority').value,
+                // Collect other settings as needed
+            };
+
+            // Call backend API to save settings
+            console.log('Saving settings:', settings);
+
+            // Simulate API call
+            setTimeout(() => {
+                alert('Settings saved successfully!');
+                closeSettingsPanel();
+            }, 500);
+        }
+
+        // Function to open device manager
+        function openDeviceManager() {
+            alert('Device manager would open here');
+            // Implementation for device manager would go here
+        }
+
+        // Event listener for battery threshold slider
+        document.addEventListener('DOMContentLoaded', function () {
+            // Update battery threshold display value on input change
+            const batterySlider = document.getElementById('battery-threshold');
+            if (batterySlider) {
+                batterySlider.addEventListener('input', function () {
+                    document.getElementById('battery-threshold-value').textContent = this.value + '%';
+                });
+            }
+
+            // Ensure the panel closes when clicking outside
+            const panel = document.getElementById('settings-panel');
+            if (panel) {
+                window.addEventListener('click', function (event) {
+                    if (event.target === panel) {
+                        closeSettingsPanel();
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script src="{{ url_for('static', filename='javascripts/semsdynamics.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='javascripts/lights_render.mjs') }}"></script>
+   <script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="I6AL8FQ_dhO4MzsLOBeMy";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script>
+
+
+</body>
+
+</html>
